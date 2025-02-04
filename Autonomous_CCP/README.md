@@ -55,6 +55,9 @@ For each waypoint, the desired position and pose are set. The error is processed
 
 The robot successfully follows the planned trajectory with minor deviations due to localization noise. The system achieves nearly 100% coverage while maintaining safe distances from the environment boundaries.
 
+### Video Representation
+[![Watch the video](./imgs/video.png)](https://youtu.be/sCGQzoF28NY)
+
 ## Future Work
 While our system successfully achieves full coverage path planning within a predefined environment, several enhancements can be made to improve performance and robustness. Future work will explore the following areas:
 
