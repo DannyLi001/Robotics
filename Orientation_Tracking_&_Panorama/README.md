@@ -58,11 +58,26 @@ where:
 ### Orientation Tracking
 
 - **Training Results:** The estimated roll, pitch, and yaw angles compared to the VICON ground truth demonstrate the accuracy of our approach.
+<p align="center">
+<img src="./fig/Measure_vs_Optm_vs_Truth_Euler_1.png" width=30% height=30%><img src="./fig/Measure_vs_Optm_vs_Truth_Euler_8.png" width=30% height=30%>
+</p>
+
 - **Test Results:** The estimated and optimized roll, pitch, and yaw angles for the test dataset remain consistent with the training set, indicating good generalization.
+<p align="center">
+<img src="./fig/Measure_vs_Optm_Euler_10.png" width=30% height=30%><img src="./fig/Measure_vs_Optm_Euler_11.png" width=30% height=30%>
+</p>
+
 
 ### Panorama Construction
 
 - **Generated Panorama:** The constructed panoramic images illustrate the effectiveness of our approach in correctly stitching the camera frames based on the estimated orientations.
+<p align="center">
+<img src="./fig/Panorama_1.png" width=30% height=30%><img src="./fig/Panorama_8.png" width=30% height=30%>
+</p>
+<p align="center">
+<img src="./fig/Panorama_10.png" width=30% height=30%><img src="./fig/Panorama_11.png" width=30% height=30%>
+</p>
+
 - **Discussion:** The orientation tracking results show that our projected gradient descent optimization effectively minimizes errors between estimated and ground truth angles. The panoramic image generated from the test set appears chaotic because the camera movement involved both rotation and translation within the world frame. However, our panorama construction method only accounts for rotational motion. As a result, the misalignment caused by the unaccounted translation leads to a distorted and disordered final panorama.
 
 ## Further Work
