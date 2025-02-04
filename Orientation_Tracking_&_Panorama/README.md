@@ -1,9 +1,12 @@
+
 # Orientation Tracking and Panorama Construction
 
-**Orientation Tracking and Panorama Construction**\
-**Author:** Jiajun Li\
-**Email:** [jil186@ucsd.edu](mailto\:jil186@ucsd.edu)\
-**Department of ECE, UCSD**\
+## Title
+
+**Orientation Tracking and Panorama Construction**  
+**Author:** Jiajun Li  
+**Email:** [jil186@ucsd.edu](mailto:jil186@ucsd.edu)  
+**Department of ECE, UCSD**  
 **Date:** February 3, 2025
 
 ## Abstract
@@ -16,18 +19,26 @@ Orientation tracking is a fundamental problem in robotics, where accurate estima
 
 ## Problem Formulation
 
-We define the orientation at time \(t\) as a unit quaternion \(q_t \in \mathbb{H}^*\). Given IMU angular velocity \(\omega_t \in \mathbb{R}^3\) and acceleration \(a_t \in \mathbb{R}^3\), our goal is to estimate the quaternion trajectory \(q_{1:T}\) by minimizing the cost function:
+We define the orientation at time \( t \) as a unit quaternion \( q_t \in \mathbb{H}^* \). Given IMU angular velocity \( \omega_t \in \mathbb{R}^3 \) and acceleration \( a_t \in \mathbb{R}^3 \), our goal is to estimate the quaternion trajectory \( q_{1:T} \) by minimizing the cost function:
 
-\(c(q_{1:T}) = \frac{1}{2} \sum_{t=0}^{T-1} \| 2 \log ( q_{t+1}^{-1} \circ f(q_t, \tau_t \omega_t) ) \|_2^2 + \frac{1}{2} \sum_{t=1}^{T} \| [0, a_t] - h(q_t) \|_2^2\)
+\[
+c(q_{1:T}) = \frac{1}{2} \sum_{t=0}^{T-1} \| 2 \log ( q_{t+1}^{-1} \circ f(q_t, \tau_t \omega_t) ) \|_2^2 + \frac{1}{2} \sum_{t=1}^{T} \| [0, a_t] - h(q_t) \|_2^2
+\]
 
 where:
 
 - The **motion model** is:
-  \(q_{t+1} = f(q_t, \tau_t \omega_t) := q_t \circ \exp([0, \tau_t \omega_t / 2])\)
+  \[
+  q_{t+1} = f(q_t, \tau_t \omega_t) := q_t \circ \exp([0, \tau_t \omega_t / 2])
+  \]
 - The **observation model** is:
-  \([0, a_t] = h(q_t) := q_t^{-1} \circ [0, 0, 0, -g] \circ q_t\)
-- The **unit norm constraint** is enforced for all \(t\):
-  \(\|q_t\|_2 = 1\)
+  \[
+  [0, a_t] = h(q_t) := q_t^{-1} \circ [0, 0, 0, -g] \circ q_t
+  \]
+- The **unit norm constraint** is enforced for all \( t \):
+  \[
+  \|q_t\|_2 = 1
+  \]
 
 ## Technical Approach
 
@@ -69,5 +80,5 @@ where:
 The project successfully implemented an orientation tracking system using projected gradient descent optimization, which effectively estimated roll, pitch, and yaw angles. The results showed a close match with the ground truth data, indicating the accuracy of the approach. The panoramic image construction demonstrated the feasibility of aligning images based on estimated orientations, although some distortions were observed due to limitations in handling translation effects. Future improvements should focus on refining quaternion estimation, incorporating translation effects into the panorama generation process, and optimizing computational efficiency for real-time applications.
 
 ## References
-1. Nikolay Atanasov, "Lecture 5: Factor Graph SLAM," ECE276A: Sensing \& Estimation in Robotics, UCSD, 2025. [8-11].
 
+1. Instructor Name, "Lecture Title," Course Name, University Name, 2025. [PowerPoint slides].
