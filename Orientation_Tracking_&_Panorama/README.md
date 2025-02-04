@@ -1,7 +1,5 @@
 # Orientation Tracking and Panorama Construction
 
-## Title
-
 **Orientation Tracking and Panorama Construction**\
 **Author:** Jiajun Li\
 **Email:** [jil186@ucsd.edu](mailto\:jil186@ucsd.edu)\
@@ -71,6 +69,5 @@ where:
 The project successfully implemented an orientation tracking system using projected gradient descent optimization, which effectively estimated roll, pitch, and yaw angles. The results showed a close match with the ground truth data, indicating the accuracy of the approach. The panoramic image construction demonstrated the feasibility of aligning images based on estimated orientations, although some distortions were observed due to limitations in handling translation effects. Future improvements should focus on refining quaternion estimation, incorporating translation effects into the panorama generation process, and optimizing computational efficiency for real-time applications.
 
 ## References
-
-1. Instructor Name, "Lecture Title," Course Name, University Name, 2025. [PowerPoint slides].
+1. Nikolay Atanasov, "Lecture 5: Factor Graph SLAM," ECE276A: Sensing \& Estimation in Robotics, UCSD, 2025. [8-11].
 
