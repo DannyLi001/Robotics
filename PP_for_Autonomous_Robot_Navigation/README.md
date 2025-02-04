@@ -50,6 +50,10 @@ In the figure above, the red dashed line represents the planned path for minimum
 ![Maximum Safety Car Motion](./img/maximum_safety_motion.png)
 
 For the maximum safety approach, the red dashed line represents the planned path, while the green dots show the estimated positions. Despite some localization errors, the robot follows the path and maintains a safe distance from obstacles.
+### Video Representation
+[![Watch the video](./img/video1.png)](https://youtu.be/pjOQJUsrepY) 
+[![Watch the video](./img/video2.png)](https://youtu.be/FdMfx6F-wpE) 
+
 
 ## Conclusion and Future Work
 This work presents two contrasting approaches to path planning for autonomous navigation. The **minimum distance algorithm** effectively computes the shortest route using visibility graphs and Dijkstra’s algorithm, while the **maximum safety approach** leverages Voronoi diagrams for obstacle avoidance. Experimental results validate both methods, demonstrating their effectiveness in different scenarios.
