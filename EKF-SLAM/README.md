@@ -23,23 +23,40 @@ The experimental setup consists of a 10ft × 10ft environment with eight landmar
 ## EKF-SLAM Algorithm
 ### State Vector and Measurement Vector
 For the car itself, the state vector is:
-$$x = (x, y, \theta)^T$$
+```math
+x = (x, y, \theta)^T
+```
 which represents the car's position and orientation in the world coordinate system. For the whole system, the state vector:
-$$s = (x, y, \theta, x_{lm1}, y_{lm1} \cdots x_{lmN}, y_{lmN})^T$$
+
+```math
+s = (x, y, \theta, x_{lm1}, y_{lm1} \cdots x_{lmN}, y_{lmN})^T
+```
+
 represents the car's state and positions of $N$ landmarks. The measurement vector is:
-$$z = (q, \theta^{'})^T$$
+
+```math
+z = (q, \theta^{'})^T
+```
 where $q$ represents the distance between the car and the landmark, and $\theta^{'}$ represents the angle of the vector from the car to the landmark in the camera coordinate system.
 
 ### System and Control Matrices
 The system matrix $F$ is an identity matrix:
-$$ F = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1  \end{bmatrix} $$
+
+```math
+ F = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1  \end{bmatrix}
+```
 
 The control matrix $G$ is:
-$$ G = \begin{bmatrix} dt \cos(\theta) & -dt \sin(\theta) & 0 \\ dt \sin(\theta) &  dt \cos(\theta) & 0 \\ 0 & 0 & dt \end{bmatrix} $$
 
+```math
+ G = \begin{bmatrix} dt \cos(\theta) & -dt \sin(\theta) & 0 \\ dt \sin(\theta) &  dt \cos(\theta) & 0 \\ 0 & 0 & dt \end{bmatrix} 
+```
 ### Measurement Matrix
 The Jacobian matrix of $H$ is:
-$$ H_{jacobian} = \frac{1}{q} \begin{bmatrix} -\sqrt{q} * \delta_x & -\sqrt{q} * \delta_y & 0 & \sqrt{q} * \delta_x & \sqrt{q} * \delta_y \\ \delta_y & -\delta_x  & -q & -\delta_y & \delta_x \end{bmatrix} $$
+
+```math
+ H_{jacobian} = \frac{1}{q} \begin{bmatrix} -\sqrt{q} * \delta_x & -\sqrt{q} * \delta_y & 0 & \sqrt{q} * \delta_x & \sqrt{q} * \delta_y \\ \delta_y & -\delta_x  & -q & -\delta_y & \delta_x \end{bmatrix}
+```
 where:
 - $q$ is the square of the distance between the car and the landmark.
 - $\delta_x$ and $\delta_y$ represent the coordinate differences between the car and the landmark.
