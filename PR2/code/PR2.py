@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial import cKDTree
 
-import numpy as np
 
 def load_sensor_data(dataset):
     sensor_data = {}
@@ -52,6 +52,53 @@ def find_closest_indices(stamp1, stamp2):
             best_idx = idx-1 if left_diff < right_diff else idx
         indices.append(best_idx)
     return np.array(indices)
+
+
+def icp(source, target, initial_pose, max_iterations=50, tolerance=5e-7):
+    """Perform ICP to align target to source given an initial pose."""
+    current_pose = initial_pose.copy()
+    prev_error = 0
+    for _ in range(max_iterations):
+        # Transform target points with current pose
+        homogeneous_target = np.hstack((target, np.ones((target.shape[0], 1))))
+        transformed = (current_pose @ homogeneous_target.T).T[:, :3]
+        
+        # Find nearest neighbors in target
+        tree = cKDTree(source)
+        distances, indices = tree.query(transformed)
+        correspondences = source[indices]
+        
+        # Compute mean squared error
+        current_error = np.mean(distances ** 2)
+        if abs(prev_error - current_error) < tolerance:
+            # print(abs(prev_error - current_error))
+            break
+        prev_error = current_error
+        
+        # Compute optimal R and t using SVD
+        A = transformed
+        B = correspondences
+        A_centroid = np.mean(A, axis=0)
+        B_centroid = np.mean(B, axis=0)
+        H = (A - A_centroid).T @ (B - B_centroid)
+        U, S, Vt = np.linalg.svd(H)
+        R = Vt.T @ U.T
+        
+        # Correct reflection if necessary
+        if np.linalg.det(R) < 0:
+            Vt[-1, :] *= -1
+            R = Vt.T @ U.T
+        
+        t = B_centroid - R @ A_centroid
+        
+        # Update current pose
+        delta_pose = np.eye(4)
+        delta_pose[:3, :3] = R
+        delta_pose[:3, 3] = t
+        current_pose = delta_pose @ current_pose
+    
+    return current_pose, prev_error
+
 
 class OdometryTracker:
     def __init__(self):
@@ -115,8 +162,106 @@ class OdometryTracker:
         plt.axis('equal')
         plt.show()
 
+def lidar_to_pointcloud(ranges, angles, valid_range=(0.1, 30.0)):
+    valid = (ranges > valid_range[0]) & (ranges < valid_range[1])
+    x = ranges[valid] * np.cos(angles[valid])
+    y = ranges[valid] * np.sin(angles[valid])
+    return np.column_stack((x, y, np.zeros_like(x)))
+
+def preprocess_point_cloud(pc, voxel_size=0.1):
+    """Downsample point cloud using voxel grid filtering"""
+    if not pc.any(): return pc
+    
+    # Voxel grid downsampling
+    voxel_grid = {}
+    for point in pc:
+        voxel = tuple((point // voxel_size).astype(int))
+        voxel_grid.setdefault(voxel, []).append(point)
+    
+    return np.array([np.mean(points, axis=0) for points in voxel_grid.values()])
+
+def run_scan_matching(data, tracker):
+    # Generate LiDAR point clouds
+    angles = np.linspace(data['lidar_angle_min'], data['lidar_angle_max'], 
+                        data['lidar_ranges'].shape[0])
+    point_clouds = [preprocess_point_cloud(lidar_to_pointcloud(ranges, angles)) 
+                   for ranges in data['lidar_ranges'].T]
+
+    # Initialize corrected trajectory
+    corrected_trajectory = [np.eye(4)]
+    lidar_timestamps = data['lidar_stamps']
+
+    for i in range(1, len(point_clouds)):
+        # Get consecutive scans
+        source_pc = point_clouds[i-1]
+        target_pc = point_clouds[i]
+        if len(source_pc) < 100 or len(target_pc) < 100: continue
+
+        # Get temporal information
+        t_prev = lidar_timestamps[i-1]
+        t_curr = lidar_timestamps[i]
+        
+        # Get odometry-based relative transformation
+        T_prev = get_odometry_pose(tracker.trajectory, t_prev, data['encoder_stamps'])
+        T_curr = get_odometry_pose(tracker.trajectory, t_curr, data['encoder_stamps'])
+        T_odom = np.linalg.inv(T_prev) @ T_curr
+
+        # Perform ICP
+        T_icp, _ = icp(source_pc, target_pc, T_odom, max_iterations=30)
+        
+        # Update trajectory
+        corrected_trajectory.append(corrected_trajectory[-1] @ T_icp)
+
+    return corrected_trajectory
+
+def get_odometry_pose(trajectory, lidar_ts, encoder_tss):
+    """Get interpolated odometry pose at specified timestamp"""
+    times = encoder_tss
+    poses = trajectory
+    
+    idx = np.searchsorted(times, lidar_ts)
+    if idx == 0 or idx == len(times):
+        return pose_to_transform(poses[idx])
+    
+    # Linear interpolation
+    alpha = (lidar_ts - times[idx-1]) / (times[idx] - times[idx-1])
+    interp_pose = poses[idx-1] + alpha * (poses[idx] - poses[idx-1])
+    return pose_to_transform(interp_pose)
+
+def pose_to_transform(pose):
+    """Convert [x, y, theta] to 4x4 transformation matrix"""
+    x, y, theta = pose
+    return np.array([
+        [np.cos(theta), -np.sin(theta), 0, x],
+        [np.sin(theta), np.cos(theta), 0, y],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ])
 
 
+def plot_results(odom_traj, icp_traj):
+    plt.figure(figsize=(12, 6))
+    
+    # Plot odometry trajectory
+    odom_xy = np.array([p[:2] for p in odom_traj])
+    plt.plot(odom_xy[:,0], odom_xy[:,1], 'b-', label='Wheel Odometry')
+    
+    # Plot ICP-corrected trajectory
+    icp_xy = np.array([transform_to_pose(T)[:2] for T in icp_traj])
+    plt.plot(icp_xy[:,0], icp_xy[:,1], 'r-', label='ICP-Corrected')
+    
+    plt.title('Trajectory Comparison')
+    plt.xlabel('X Position (m)')
+    plt.ylabel('Y Position (m)')
+    plt.legend()
+    plt.grid(True)
+    plt.axis('equal')
+    plt.show()
+
+def transform_to_pose(T):
+    """Convert 4x4 matrix to [x, y, theta]"""
+    theta = np.arctan2(T[1,0], T[0,0])
+    return np.array([T[0,3], T[1,3], theta])
 
 if __name__ == '__main__':
 
@@ -135,3 +280,8 @@ if __name__ == '__main__':
 
     # Plot results
     tracker.plot_trajectory()
+    
+    # Perform scan matching
+    icp_trajectory = run_scan_matching(data, tracker)
+    
+    plot_results(tracker.trajectory, icp_trajectory)
