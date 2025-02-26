@@ -168,7 +168,7 @@ def lidar_to_pointcloud(ranges, angles):
     y = ranges * np.sin(angles)
     return np.column_stack((x, y, np.zeros_like(x)))
 
-def run_scan_matching(data, tracker):
+def run_scan_matching(data, tracker): # loop can be optimized
     # Generate LiDAR point clouds
     angles = np.linspace(data['lidar_angle_min'], data['lidar_angle_max'], 
                         data['lidar_ranges'].shape[0])
@@ -186,7 +186,6 @@ def run_scan_matching(data, tracker):
         source_pc = point_clouds[i-1]
         target_pc = point_clouds[i]
         
-
         # Get temporal information
         t_prev = lidar_timestamps[i-1]
         t_curr = lidar_timestamps[i]
@@ -202,7 +201,7 @@ def run_scan_matching(data, tracker):
         # Update trajectory
         corrected_trajectory.append(corrected_trajectory[-1] @ T_icp)
 
-    return corrected_trajectory
+    return np.array([transform_to_pose(T) for T in corrected_trajectory])
 
 def get_odometry_pose(trajectory, lidar_ts, encoder_tss):
     """Get interpolated odometry pose at specified timestamp"""
@@ -236,8 +235,7 @@ def plot_results(odom_traj, icp_traj):
     plt.plot(odom_xy[:,0], odom_xy[:,1], 'b-', label='Wheel Odometry')
     
     # Plot ICP-corrected trajectory
-    icp_xy = np.array([transform_to_pose(T)[:2] for T in icp_traj])
-    plt.plot(icp_xy[:,0], icp_xy[:,1], 'r-', label='ICP-Corrected')
+    plt.plot(icp_traj[:,0], icp_traj[:,1], 'r-', label='ICP-Corrected')
     
     plt.title('Trajectory Comparison')
     plt.xlabel('X Position (m)')
@@ -263,7 +261,7 @@ class OccupancyGrid:
         self.resolution = resolution  # meters per cell
         self.size = size              # grid size in meters
         self.origin = np.array([size/resolution//2, size/resolution//2])  # center point
-        self.grid = np.zeros((int(size/resolution), int(size/resolution)), dtype=np.float32)
+        self.grid = np.zeros((int(size/resolution), int(size/resolution)), dtype=np.float64)
         self.log_odds_free = -0.4
         self.log_odds_occ = 0.6
         self.max_log_odds = 100
@@ -378,7 +376,7 @@ class TextureMapper:
             if 0 <= x < self.grid.shape[0] and 0 <= y < self.grid.shape[1]:
                 self.grid[x, y] = color
 
-def process_mapping(data, trajectory):
+def process_mapping(data, trajectory):  # loop can be optimized
     # Initialize maps
     og = OccupancyGrid(resolution=0.1, size=100)
     texture_map = TextureMapper(og)
@@ -386,22 +384,15 @@ def process_mapping(data, trajectory):
     # Process first LiDAR scan
     angles = np.linspace(data['lidar_angle_min'], data['lidar_angle_max'],
                         data['lidar_ranges'].shape[0])
-    ranges = data['lidar_ranges'][:, 0]
-    valid = (ranges > 0.1) & (ranges < 30)  # valid range 0.1-30 meters
-    scan = np.vstack((ranges[valid] * np.cos(angles[valid]),
-                     ranges[valid] * np.sin(angles[valid]))).T
-    
-    # Update with initial pose (assuming identity)
-    og.update(scan, np.array([0, 0, 0]))
-    
-    # Visualize initial map
-    plt.figure()
-    plt.imshow(1 - 1/(1+np.exp(og.grid)), cmap='gray', origin='lower')
-    plt.title('Initial Occupancy Map')
-    plt.show()
     
     # Process all scans
-    for i in range(len(trajectory)):
+    for i in range(700, len(trajectory)):
+        if i % 1000 == 0:
+            plt.figure()
+            plt.imshow(1 - 1/(1+np.exp(og.grid)), cmap='gray', origin='lower')
+            plt.title('Initial Occupancy Map')
+            plt.show()
+            print(f"iter to point: {i}")
         # Update occupancy grid
         ranges = data['lidar_ranges'][:, i]
         valid = (ranges > 0.1) & (ranges < 30)
@@ -410,15 +401,20 @@ def process_mapping(data, trajectory):
         og.update(scan, trajectory[i])
         
         # Update texture map with Kinect data
-        if i < len(data['rgb_stamps']):
-            # Find closest RGBD frame
-            idx = np.argmin(np.abs(data['rgb_stamps'][i] - data['lidar_stamps']))
-            rgb = cv2.cvtColor(data['rgb_images'][idx], cv2.COLOR_BGR2RGB)
-            depth = data['depth_images'][idx]
-            texture_map.add_rgbd_frame(rgb, depth, trajectory[i], 
-                                     intrinsics={'fx': 525, 'fy': 525,
-                                                'cx': 319.5, 'cy': 239.5})
-    
+        # if i < len(data['rgb_stamps']):
+        #     # Find closest RGBD frame
+        #     idx = np.argmin(np.abs(data['rgb_stamps'][i] - data['lidar_stamps']))
+        #     rgb = cv2.cvtColor(data['rgb_images'][idx], cv2.COLOR_BGR2RGB)
+        #     depth = data['depth_images'][idx]
+        #     texture_map.add_rgbd_frame(rgb, depth, trajectory[i], 
+        #                              intrinsics={'fx': 525, 'fy': 525,
+        #                                         'cx': 319.5, 'cy': 239.5})
+        
+    # Visualize initial map
+    plt.figure()
+    plt.imshow(1 - 1/(1+np.exp(og.grid)), cmap='gray', origin='lower')
+    plt.title('Initial Occupancy Map')
+    plt.show()
     return og, texture_map
 
 def postprocess_maps(occupancy_grid, texture_map):
@@ -441,7 +437,6 @@ def postprocess_maps(occupancy_grid, texture_map):
 
 
 if __name__ == '__main__':
-
     dataset = 20
     data = load_sensor_data(dataset)
 
