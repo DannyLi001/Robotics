@@ -1,12 +1,13 @@
 import cv2
 import os
-import open3d as o3d
+import gtsam
+from gtsam import noiseModel
+# import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 from pr2_utils import bresenham2D
 from scipy.spatial import cKDTree
 from tqdm import tqdm
-from scipy.ndimage import binary_dilation
 from collections import defaultdict
 import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
@@ -237,7 +238,7 @@ def run_scan_matching(data, tracker):
         corrected_trajectory.append(corrected_trajectory[-1] @ T_icp)   # cur_T
 
     # return np.array([transform_to_pose(T) for T in corrected_trajectory])
-    return corrected_trajectory
+    return corrected_trajectory, point_clouds
 
 def get_odometry_pose(trajectory, lidar_ts, encoder_tss):
     """Get interpolated odometry pose at specified timestamp"""
@@ -515,6 +516,97 @@ def create_transform_matrix(position, euler_angles):
     return T
 
 
+def optimize_with_gtsam(icp_trajectory, point_clouds):
+    # Convert ICP trajectory to initial estimates in GTSAM's Pose2 format
+    initial_estimates = gtsam.Values()
+    for i, T in enumerate(icp_trajectory):
+        x, y, theta = transform_to_pose(T)
+        initial_estimates.insert(i, gtsam.Pose2(x, y, theta))
+    
+    # Create factor graph
+    graph = gtsam.NonlinearFactorGraph()
+    
+    # Add prior on the first pose to anchor the graph
+    prior_noise = noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.05]))  # Tune these values
+    first_pose = initial_estimates.atPose2(0)
+    graph.add(gtsam.PriorFactorPose2(0, first_pose, prior_noise))
+    
+    # Add odometry factors between consecutive poses
+    odometry_noise = noiseModel.Diagonal.Sigmas(np.array([0.2, 0.2, 0.1]))  # Tune these values
+    for i in range(1, len(icp_trajectory)):
+        # Calculate relative pose from ICP result
+        T_prev = icp_trajectory[i-1]
+        T_curr = icp_trajectory[i]
+        T_rel = np.linalg.inv(T_prev) @ T_curr
+        dx, dy, dtheta = transform_to_pose(T_rel)
+        # Add between factor to the graph
+        graph.add(gtsam.BetweenFactorPose2(i-1, i, gtsam.Pose2(dx, dy, dtheta), odometry_noise))
+    
+    # Fixed-interval loop closure
+    loop_closure_noise = noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.05]))  # Tighter noise for loop closures
+    for i in tqdm(range(0, len(icp_trajectory) - 10, 10), desc="Fixed-interval loop closures"):
+        j = i + 10
+        if j >= len(icp_trajectory):
+            continue
+        # Get corresponding LiDAR scans
+        source_pc = point_clouds[i]
+        target_pc = point_clouds[j]
+        # Initial guess from current trajectory
+        T_i = icp_trajectory[i]
+        T_j = icp_trajectory[j]
+        initial_pose = np.linalg.inv(T_i) @ T_j
+        # Perform ICP
+        T_icp, error = icp(source_pc, target_pc, initial_pose, max_iterations=50)
+        if error < 0.1:  # Threshold to determine valid loop closure
+            dx, dy, dtheta = transform_to_pose(T_icp)
+            graph.add(gtsam.BetweenFactorPose2(i, j, gtsam.Pose2(dx, dy, dtheta), loop_closure_noise))
+    
+    # Proximity-based loop closure
+    positions = np.array([transform_to_pose(T)[:2] for T in icp_trajectory])
+    tree = cKDTree(positions)
+    radius = 0.05  # meters for proximity search
+    proximity_noise = noiseModel.Diagonal.Sigmas(np.array([0.2, 0.2, 0.1]))
+    
+    for i in tqdm(range(len(icp_trajectory)), desc="Proximity loop closures"):
+        # Find nearby poses within radius
+        neighbors = tree.query_ball_point(positions[i], radius)[:5]
+        for j in neighbors:
+            if j <= i:  # Avoid duplicate checks and self
+                continue
+            # Get LiDAR scans
+            source_pc = point_clouds[i]
+            target_pc = point_clouds[j]
+            # Initial guess from current trajectory
+            T_i = icp_trajectory[i]
+            T_j = icp_trajectory[j]
+            initial_pose = np.linalg.inv(T_i) @ T_j
+            # Perform ICP
+            T_icp, error = icp(source_pc, target_pc, initial_pose, max_iterations=50)
+            # Check if match is physically plausible
+            if error < 0.1 and np.linalg.norm(T_icp[:2,3]) < 1.5:  # Thresholds for translation
+                dx, dy, dtheta = transform_to_pose(T_icp)
+                graph.add(gtsam.BetweenFactorPose2(i, j, gtsam.Pose2(dx, dy, dtheta), proximity_noise))
+    
+    # Optimize the factor graph
+    parameters = gtsam.LevenbergMarquardtParams()
+    optimizer = gtsam.LevenbergMarquardtOptimizer(graph, initial_estimates, parameters)
+    result = optimizer.optimize()
+    
+    # Convert optimized poses back to 4x4 transformation matrices
+    optimized_trajectory = []
+    for i in range(len(icp_trajectory)):
+        pose = result.atPose2(i)
+        T = np.array([
+            [np.cos(pose.theta()), -np.sin(pose.theta()), 0, pose.x()],
+            [np.sin(pose.theta()),  np.cos(pose.theta()), 0, pose.y()],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+        optimized_trajectory.append(T)
+    
+    return optimized_trajectory
+
+
 
 if __name__ == '__main__':
     dataset = 20
@@ -534,15 +626,28 @@ if __name__ == '__main__':
     tracker.plot_trajectory()
     
     # Perform scan matching
-    icp_trajectory = run_scan_matching(data, tracker)   # list of cur_T transformation matrix
+    icp_trajectory, point_clouds = run_scan_matching(data, tracker)   # list of cur_T transformation matrix
     
     plot_results(tracker.trajectory, np.array([transform_to_pose(T) for T in icp_trajectory]))
 
+    # Optimize trajectory using GTSAM with loop closures
+    optimized_trajectory = optimize_with_gtsam(icp_trajectory, point_clouds)
+
+    # Plot results
+    plot_results(tracker.trajectory, np.array([transform_to_pose(T) for T in optimized_trajectory]))
+
+    # Process mapping with optimized trajectory
+    occ_grid_gt, tex_map_gt = process_mapping(data, optimized_trajectory)
+
+
+
     # Process mapping
     occupancy_grid, texture_map = process_mapping(data, icp_trajectory)
-    
-    valid_occ = occupancy_grid.grid.reshape(-1) > 0
-    valid_tex = (texture_map.grid.reshape(-1, 3) > 0)[:, 0]
+
+    # valid_occ = occupancy_grid.grid.reshape(-1) > 0
+    valid_occ = occ_grid_gt.grid.reshape(-1) > 0
+    # valid_tex = (texture_map.grid.reshape(-1, 3) > 0)[:, 0]
+    valid_tex = (tex_map_gt.grid.reshape(-1, 3) > 0)[:, 0]
     intersect = valid_occ != valid_tex
 
     final = texture_map.grid.reshape(-1, 3)
@@ -553,4 +658,4 @@ if __name__ == '__main__':
     plt.imshow(cv2.cvtColor(final, cv2.COLOR_BGR2RGB), origin='lower')
     plt.title('Combined Map')
     plt.show()
-    pass
+
