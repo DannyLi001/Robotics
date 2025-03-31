@@ -126,7 +126,5 @@ $$
 - **Trajectory and Landmarks Prediction**: The IMU-only trajectory exhibits characteristic drift in position. The open-loop nature is evident from the diverging path structure. Initial landmarks show sparse coverage with clustering near the trajectory start, consistent with limited parallax during initial motion.
 - **Trajectory and Landmarks Updates**: Preliminary landmark adjustments demonstrate subsets of landmarks shifting toward more physically plausible configurations. The updated trajectory shows some vibration due to the covariance of the landmarks and the observation noise. However, due to the naive filtering strategy, some landmarks have a worse effect on the update, which magnifies the vibration of the trajectory.
 
-<div align="center">
-  <img src="img/updated00.png" width="45%">
-  <img src="img/updated01.png" width="45%">
-</div>
+![Updated00](./img/updated00.png)
+![Updated01](./img/updated01.png)
