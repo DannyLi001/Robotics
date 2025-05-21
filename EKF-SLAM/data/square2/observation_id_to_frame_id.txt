@@ -1,8 +1,0 @@
-0: marker_0
-1: marker_1
-2: marker_2
-3: marker_3
-4: marker_4
-5: marker_5
-6: marker_7
-7: marker_8
