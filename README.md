@@ -7,23 +7,25 @@ Welcome to the **Danny's** Robotics Repository! This repository contains multipl
 ## 📂 Repository Structure
 
 ### 1. [Orientation Tracking](./Orientation_Tracking/Orientation_Tracking_&_Panorama.pdf)
-   - **Description:** 
+   - **Description:** This project implements a projected gradient descent algorithm to estimate 3D orientation from IMU data using quaternion optimization, enforcing unit norm constraints. The estimated orientations are then used to construct panoramic images by stitching camera frames projected onto a spherical surface. Results show accurate orientation tracking and effective panorama generation, with some distortion due to unmodeled camera translation.
+
    - **Files:**
 
 ### 2. [Max Safe & Min Dist Path Planning](./Max_Safe_&_Min_Dist_Path_Planning/Max_Safe_&_Min_Dist_Path_Planning.pdf)
-   - **Description:** 
+   - **Description:** This project implements two path planning strategies for autonomous robot navigation: one prioritizing minimum distance using visibility graphs and Dijkstra’s algorithm, and the other maximizing safety through Voronoi-based obstacle avoidance. Both methods were tested in a controlled environment, with the robot successfully following planned paths while accounting for localization noise. Results show a clear trade-off between path efficiency and safety, informing future work on adaptive and dynamic planning systems.
+
    - **Files:**
 
 ### 3. [Coverage Path Planning](./Coverage_Path_Planning/Autonomous_CPP_report.pdf)
-   - **Description:** 
+   - **Description:** This project develops an autonomous robot system for coverage path planning (CPP) within a 10ft × 10ft bounded environment using AprilTag landmarks for localization. The system employs a grid-based sweep algorithm to generate zigzag paths and integrates PID control for precise motion, achieving near-complete coverage while maintaining safe distances from walls. Experimental results validate its effectiveness, with future enhancements targeting dynamic obstacle avoidance, improved localization, and SLAM integration for broader applicability.
    - **Files:**
 
 ### 4. [EKF-SLAM with AprilTag](./EKF-SLAM_with_AprilTag/EKF-SLAM.pdf)
-   - **Description:** 
+   - **Description:** This project implements an Extended Kalman Filter (EKF)-based SLAM system for autonomous robots, enabling simultaneous localization and mapping in a structured 10ft × 10ft environment with predefined landmarks. By testing square and octagon trajectories, the system demonstrates improved robustness and lower average landmark estimation errors (0.0514m vs. 0.0545m) with the octagon path, validated through covariance analysis and error metrics. The work highlights the impact of trajectory design on SLAM accuracy, with applications in enhancing autonomous navigation in controlled environments.
    - **Files:**
 
 ### 5. [LiDAR-SLAM and Texture Mapping](./LiDAR-SLAM_and_Texture_Mapping/LiDAR-Based%20SLAM%20and%20Texture%20Mapping.pdf)
-   - **Description:** 
+   - **Description:** This project develops a LiDAR-based SLAM system that integrates encoder-IMU odometry, ICP scan matching, and GTSAM pose graph optimization to enable autonomous robot navigation and mapping in unstructured environments. By fusing LiDAR, RGBD, and motion sensor data, the system constructs precise occupancy grids and textured floor maps, reducing trajectory drift through loop closure detection and factor graph optimization. Experimental results demonstrate enhanced mapping accuracy, with future improvements focusing on real-time processing, 3D extensions, and semantic integration for advanced environmental perception.
    - **Files:**
 
 ### 6. [VI-SLAM using EKF](./VI-SLAM_using_EKF/Visual-Inertial%20SLAM%20using%20Extended%20Kalman%20Filter.pdf)
