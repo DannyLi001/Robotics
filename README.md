@@ -29,15 +29,15 @@ Welcome to the **Danny's** Robotics Repository! This repository contains multipl
    - **Files:**
 
 ### 6. [VI-SLAM using EKF](./VI-SLAM_using_EKF/Visual-Inertial%20SLAM%20using%20Extended%20Kalman%20Filter.pdf)
-   - **Description:** 
+   - **Description:** This project develops a Visual-Inertial SLAM system using an Extended Kalman Filter (EKF) to fuse IMU and stereo camera data, enabling 6-DOF pose estimation and 3D landmark mapping in GPS-denied environments. The approach integrates SE(3) kinematics for IMU trajectory prediction, stereo triangulation for landmark initialization, and joint optimization to refine pose and map estimates while mitigating scale drift and sensor noise. Experimental results validate reduced trajectory drift compared to IMU-only localization, though landmark-induced vibrations highlight opportunities for improved filtering and real-time performance in future work.
    - **Files:**
 
 ### 7. [Dynamic Programming for DoorKey Navigation](./Dynamic_Programming_for_DoorKey_Navigation/Dynamic_Programming_for_DoorKey_Navigation.pdf)
-   - **Description:** 
+   - **Description:** This project develops a Dynamic Programming approach using value iteration to solve the DoorKey navigation challenge in Mini-Grid environments, formulating the task as a Markov Decision Process (MDP) with state representations tracking agent position, orientation, key possession, and door statuses. The method extends to randomized maps by augmenting the state space to account for variable key/goal positions and multiple door interactions, ensuring complete observability and optimal policy computation. Experimental validation demonstrates successful navigation in 7 predefined and 36 randomized 10x10 grid configurations, achieving minimal path lengths while handling directional constraints and object interactions through systematic state-space exploration.
    - **Files:**
    
-### 8. []()
-   - **Description:** 
+### 8. [Weighted A* and RRT in 3D Environments](./Weighted_A_and_RRT_Algorithms_in_3D/Weighted_A_and_RRT_in_3D_Environments.pdf)
+   - **Description:** This project develops an integrated 3D motion planning framework including weighted A* and RRT algorithms to navigate obstacle-rich environments, utilizing a slab-based collision detection system for safety verification and adaptive heuristics for balancing optimality and efficiency. It demonstrates robust performance in cluttered scenarios through innovations like dynamic grid resolution, goal-biased sampling, and memory-efficient node management, achieving guaranteed collision-free paths with bounded suboptimality (A*) and probabilistic completeness (RRT).
    - **Files:**
 ---
 
