@@ -273,6 +273,8 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
     v_fov_rad = np.radians(v_fov)
 
     for idx, image in enumerate(images):
+        if idx > images.shape[0]/4*3:
+          break
         image = image.T
         image_time = image_timestamps[idx]
         orientation_idx = np.searchsorted(orientation_timestamps, image_time, side='right') - 1
@@ -299,7 +301,12 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         xyz = np.stack([x, y, z], axis=0).reshape(3, -1)
 
         # Rotate to the world frame using the rotation matrix R
-        xyz_world = R @ xyz
+        adjustment_R = np.array([
+            [1, 0, 0],  
+            [0, -1, 0],  
+            [0, 0, 1]   
+        ])
+        xyz_world = R @ (adjustment_R @ xyz)
 
         # Convert back to spherical coordinates
         x_w, y_w, z_w = xyz_world

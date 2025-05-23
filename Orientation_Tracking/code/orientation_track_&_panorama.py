@@ -34,8 +34,8 @@ tau = torch.zeros(len(ts) - 1)
 acc = torch.tensor(imud[1:4].copy())
 w = torch.tensor(imud[4:].copy())
 
-acc_sens = 300
-gyro_sens = 3.33
+acc_sens = 300    # mV/g
+gyro_sens = 3.33  # mV/degree/sec
 
 def calibrate(ts, acc, w):
   acc_factor = 3300 / 1023 / acc_sens
@@ -87,20 +87,20 @@ truth_euler = torch.stack(truth_euler)
 
 fig, ax = plt.subplots(3, 1, figsize=(5, 15))
 # Plot X-axis values
-ax[0].plot(ts - ts[0], euler[:,0], label='MEASURED', color='blue')
 ax[0].plot(ts_truth - ts_truth[0], truth_euler[:,0], label='TRUTH', color='red')
+ax[0].plot(ts - ts[0], euler[:,0], label='MEASURED', color='blue')
 ax[0].set_title('Roll (X-axis) comparison')
 ax[0].legend()
 
 # Plot Y-axis values
-ax[1].plot(ts - ts[0], euler[:,1], label='MEASURED', color='blue')
 ax[1].plot(ts_truth - ts_truth[0], truth_euler[:,1], label='TRUTH', color='red')
+ax[1].plot(ts - ts[0], euler[:,1], label='MEASURED', color='blue')
 ax[1].set_title('Pitch (Y-axis) comparison')
 ax[1].legend()
 
 # Plot Z-axis values
-ax[2].plot(ts - ts[0], euler[:,2], label='MEASURED', color='blue')
 ax[2].plot(ts_truth - ts_truth[0], truth_euler[:,2], label='TRUTH', color='red')
+ax[2].plot(ts - ts[0], euler[:,2], label='MEASURED', color='blue')
 ax[2].set_title('Yaw (Z-axis) comparison')
 ax[2].legend()
 
@@ -144,9 +144,10 @@ plt.tight_layout()
 plt.savefig("fig/Measure_vs_Truth_Acc_" + dataset + ".png")
 plt.show()
 
-learning_rate = 0.008
-num_iterations = 150
-# num_iterations = 0
+
+
+learning_rate = 5e-3
+num_iterations = 200
 
 def mat_mul(a,b):    
   w1, x1, y1, z1 = a[:,0], a[:,1], a[:,2], a[:,3]
@@ -206,12 +207,10 @@ def cost(qt):
   second = 1/2 * torch.sum(torch.norm(tmp.T[1:] - mat_h(qt[1:]), dim=1)**2)
   return first + second
 
-
 def project_to_unit_quaternion(q):
     return q / torch.norm(q)
 
 for iteration in range(num_iterations):
-
   if qt.grad is not None:
     qt.grad.zero_()
 
@@ -226,10 +225,8 @@ for iteration in range(num_iterations):
 
   qt = qt.detach().clone().requires_grad_(True)
 
-  if iteration % 10 == 0:
+  if iteration % 20 == 0:
     print(f"Iteration {iteration}, Cost: {c.item()}")
-
-
 
 qt_optimized = qt.detach().numpy()
 
@@ -242,31 +239,27 @@ euler_optimized = torch.vstack(euler_optimized)
 rot_mat_optimized = torch.stack(rot_mat_optimized)
 
 fig, ax = plt.subplots(3, 1, figsize=(5, 15))
-ax[0].plot(ts - ts[0], euler[:,0], label='MEASURED', color='blue')
-ax[0].plot(ts - ts[0], euler_optimized[:, 0], label='OPTIMIZED', color='green')
 ax[0].plot(ts_truth - ts_truth[0], truth_euler[:, 0], label='TRUTH', color='red')
+# ax[0].plot(ts - ts[0], euler[:,0], label='MEASURED', color='blue')
+ax[0].plot(ts - ts[0], euler_optimized[:, 0], label='OPTIMIZED', color='green')
 ax[0].set_title('Roll (X-axis) comparison')
 ax[0].legend()
 
-ax[1].plot(ts - ts[0], euler[:,1], label='MEASURED', color='blue')
-ax[1].plot(ts - ts[0], euler_optimized[:, 1], label='OPTIMIZED', color='green')
 ax[1].plot(ts_truth - ts_truth[0], truth_euler[:, 1], label='TRUTH', color='red')
+# ax[1].plot(ts - ts[0], euler[:,1], label='MEASURED', color='blue')
+ax[1].plot(ts - ts[0], euler_optimized[:, 1], label='OPTIMIZED', color='green')
 ax[1].set_title('Pitch (Y-axis) comparison')
 ax[1].legend()
 
-ax[2].plot(ts - ts[0], euler[:,2], label='MEASURED', color='blue')
-ax[2].plot(ts - ts[0], euler_optimized[:, 2], label='OPTIMIZED', color='green')
 ax[2].plot(ts_truth - ts_truth[0], truth_euler[:, 2], label='TRUTH', color='red')
+# ax[2].plot(ts - ts[0], euler[:,2], label='MEASURED', color='blue')
+ax[2].plot(ts - ts[0], euler_optimized[:, 2], label='OPTIMIZED', color='green')
 ax[2].set_title('Yaw (Z-axis) comparison')
 ax[2].legend()
 
 plt.tight_layout()
 plt.savefig("fig/Measure_vs_Optm_vs_Truth_Euler_" + dataset + ".png")
 plt.show()
-
-
-
-
 
 
 cfile = "data/cam/cam" + dataset + ".p"
@@ -277,7 +270,6 @@ img_ts = camd['ts'][0]
 
 
 def create_panorama(images, image_timestamps, orientations, orientation_timestamps, h_fov, v_fov):
-
     panorama_width = 2048  # Width of the unwrapped cylinder (2π radians)
     panorama_height = 1024  # Height of the unwrapped cylinder (π radians)
     panorama = np.zeros((panorama_height, panorama_width, 3), dtype=np.uint8)
@@ -286,6 +278,8 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
     v_fov_rad = np.radians(v_fov)
 
     for idx, image in enumerate(images):
+        if idx > images.shape[0]/4*3:
+          break
         image = image.T
         image_time = image_timestamps[idx]
         orientation_idx = np.searchsorted(orientation_timestamps, image_time, side='right') - 1
@@ -312,7 +306,12 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         xyz = np.stack([x, y, z], axis=0).reshape(3, -1)
 
         # Rotate to the world frame using the rotation matrix R
-        xyz_world = R @ xyz
+        adjustment_R = np.array([
+            [1, 0, 0],  
+            [0, -1, 0],  
+            [0, 0, 1]   
+        ])
+        xyz_world = R @ (adjustment_R @ xyz)
 
         # Convert back to spherical coordinates
         x_w, y_w, z_w = xyz_world
@@ -335,11 +334,16 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
 
 h_fov = 60  # Horizontal field of view in degrees
 v_fov = 45  # Vertical field of view in degrees
-
 panorama = create_panorama(images, img_ts, rot_mat_optimized, ts, h_fov, v_fov)
+panorama_true = create_panorama(images, img_ts, torch.from_numpy(np.transpose(ground_truth_R, (2, 0, 1))), torch.from_numpy(ts_truth), h_fov, v_fov)
 
 # Save or display the panorama
 plt.imshow(panorama, origin='lower')
 plt.title("Panorama for dataset " + str(dataset))
 plt.savefig("fig/Panorama_" + dataset + ".png")
+plt.show()
+plt.figure()
+plt.imshow(panorama_true, origin='lower')
+plt.title("Panorama for dataset " + str(dataset))
+# plt.savefig("fig/Panorama_" + dataset + ".png")
 plt.show()
