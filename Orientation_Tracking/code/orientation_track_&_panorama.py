@@ -20,7 +20,7 @@ def read_data(fname):
       d = pickle.load(f, encoding='latin1')  # needed for python 3
   return d
 
-dataset="9"
+dataset="8"
 ifile = "data/imu/imuRaw" + dataset + ".p"
 vfile = "data/vicon/viconRot" + dataset + ".p"
 
@@ -106,7 +106,7 @@ ax[2].legend()
 
 plt.tight_layout()
 plt.savefig("fig/Measure_vs_Truth_Euler_" + dataset + ".png")
-plt.show()
+# plt.show()
 
 def inv(q):
   tmp = q.clone()
@@ -142,7 +142,7 @@ ax[2].legend()
 
 plt.tight_layout()
 plt.savefig("fig/Measure_vs_Truth_Acc_" + dataset + ".png")
-plt.show()
+# plt.show()
 
 
 
@@ -285,9 +285,8 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         orientation_idx = np.searchsorted(orientation_timestamps, image_time, side='right') - 1
         if orientation_idx < 0:
             orientation_idx = 0
-
+          
         R = orientations[orientation_idx]
-
         H, W = image.shape[:2]
 
         # Create a grid of pixel coordinates
@@ -303,15 +302,10 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         z = np.sin(phi)
 
         # Stack into a (3, H*W) matrix for vectorized rotation
-        xyz = np.stack([x, y, z], axis=0).reshape(3, -1)
+        xyz = np.stack([x, -y, z], axis=0).reshape(3, -1)
 
         # Rotate to the world frame using the rotation matrix R
-        adjustment_R = np.array([
-            [1, 0, 0],  
-            [0, -1, 0],  
-            [0, 0, 1]   
-        ])
-        xyz_world = R @ (adjustment_R @ xyz)
+        xyz_world = R @ xyz
 
         # Convert back to spherical coordinates
         x_w, y_w, z_w = xyz_world
@@ -319,7 +313,7 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         phi_w = np.arcsin(z_w).numpy()
 
         # Map spherical coordinates to panorama coordinates
-        panorama_x = ((lambda_w + np.pi) / (2 * np.pi) * panorama_width).astype(int)
+        panorama_x = ((-lambda_w + np.pi) / (2 * np.pi) * panorama_width).astype(int)
         panorama_y = ((phi_w + np.pi / 2) / np.pi * panorama_height).astype(int)
 
         # Clip coordinates to ensure they are within the panorama bounds
@@ -345,5 +339,4 @@ plt.show()
 plt.figure()
 plt.imshow(panorama_true, origin='lower')
 plt.title("Panorama for dataset " + str(dataset))
-# plt.savefig("fig/Panorama_" + dataset + ".png")
 plt.show()

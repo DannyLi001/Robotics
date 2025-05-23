@@ -20,7 +20,7 @@ def read_data(fname):
       d = pickle.load(f, encoding='latin1')  # needed for python 3
   return d
 
-dataset="11"
+dataset="10"
 ifile = "data/imu/imuRaw" + dataset + ".p"
 vfile = "data/vicon/viconRot" + dataset + ".p"
 
@@ -252,10 +252,6 @@ plt.savefig("fig/Measure_vs_Optm_Euler_" + dataset + ".png")
 plt.show()
 
 
-
-
-
-
 cfile = "data/cam/cam" + dataset + ".p"
 camd = read_data(cfile)
 
@@ -273,8 +269,6 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
     v_fov_rad = np.radians(v_fov)
 
     for idx, image in enumerate(images):
-        if idx > images.shape[0]/4*3:
-          break
         image = image.T
         image_time = image_timestamps[idx]
         orientation_idx = np.searchsorted(orientation_timestamps, image_time, side='right') - 1
@@ -298,15 +292,10 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         z = np.sin(phi)
 
         # Stack into a (3, H*W) matrix for vectorized rotation
-        xyz = np.stack([x, y, z], axis=0).reshape(3, -1)
+        xyz = np.stack([x, -y, z], axis=0).reshape(3, -1)
 
         # Rotate to the world frame using the rotation matrix R
-        adjustment_R = np.array([
-            [1, 0, 0],  
-            [0, -1, 0],  
-            [0, 0, 1]   
-        ])
-        xyz_world = R @ (adjustment_R @ xyz)
+        xyz_world = R @ xyz
 
         # Convert back to spherical coordinates
         x_w, y_w, z_w = xyz_world
@@ -314,7 +303,7 @@ def create_panorama(images, image_timestamps, orientations, orientation_timestam
         phi_w = np.arcsin(z_w).numpy()
 
         # Map spherical coordinates to panorama coordinates
-        panorama_x = ((lambda_w + np.pi) / (2 * np.pi) * panorama_width).astype(int)
+        panorama_x = ((-lambda_w + np.pi) / (2 * np.pi) * panorama_width).astype(int)
         panorama_y = ((phi_w + np.pi / 2) / np.pi * panorama_height).astype(int)
 
         # Clip coordinates to ensure they are within the panorama bounds
