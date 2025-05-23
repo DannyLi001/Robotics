@@ -10,7 +10,7 @@ Welcome to the **Danny's** Robotics Repository! This repository contains multipl
 
    - **Demonstration:**
    <p align='center'>
-   <img src="./Orientation_Tracking/fig/Panorama_1.png" width="50%" height="50%">
+   <img src="./Orientation_Tracking/fig/Panorama_1.png" width="50%" height="50%"><img src="./Orientation_Tracking/fig/Panorama_11.png" width="50%" height="50%">
    </p>
 
 ### 2. [Max Safe & Min Dist Path Planning](./Max_Safe_&_Min_Dist_Path_Planning/Max_Safe_&_Min_Dist_Path_Planning.pdf)
