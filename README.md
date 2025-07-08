@@ -54,7 +54,6 @@ Welcome to the **Danny's** Robotics Repository! This repository contains multipl
    <p align='center'>
       <img src='./Dynamic_Programming_for_DoorKey_Navigation/gif/DoorKey-10x10-20.gif' width='50%'>
    </p>
-
    
 ### 8. [Weighted A* and RRT in 3D Environments](./Weighted_A_and_RRT_Algorithms_in_3D/Weighted_A_and_RRT_in_3D_Environments.pdf)
    - **Description:** This project develops an integrated 3D motion planning framework including weighted A* and RRT algorithms to navigate obstacle-rich environments, utilizing a slab-based collision detection system for safety verification and adaptive heuristics for balancing optimality and efficiency. It demonstrates robust performance in cluttered scenarios through innovations like dynamic grid resolution, goal-biased sampling, and memory-efficient node management, achieving guaranteed collision-free paths with bounded suboptimality (A*) and probabilistic completeness (RRT).
