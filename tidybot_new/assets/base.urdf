@@ -1,0 +1,65 @@
+<?xml version="1.0" ?>
+<robot name="franka_xarm7">
+   <!--generated with mjcf_urdf_simple_converter (https://github.com/Yasu31/mjcf_urdf_simple_converter)-->
+   <!--and modified by 55joe-->
+
+   <link name="root">
+      <inertial>
+         <mass value="0"/>
+         <inertia ixx="0.00" ixy="0.00" ixz="0.00" iyy="0.00" iyz="0.00" izz="0.00"/>
+      </inertial>
+   </link>
+   <link name="link_x">
+      <inertial>
+         <mass value="0"/>
+         <inertia ixx="0.00" ixy="0.00" ixz="0.00" iyy="0.00" iyz="0.00" izz="0.00"/>
+      </inertial>
+   </link>
+   <link name="link_y">
+      <inertial>
+         <mass value="0"/>
+         <inertia ixx="0.00" ixy="0.00" ixz="0.00" iyy="0.00" iyz="0.00" izz="0.00"/>
+      </inertial>
+   </link>
+   <joint name="joint_x" type="prismatic">
+      <parent link="root"/>
+      <child link="link_x"/>
+      <axis xyz="1 0 0"/>
+      <limit effort="100" lower="-20" upper="20" velocity="0.50"/>
+      <dynamics damping="10.0" friction="10"/>
+   </joint>
+   <joint name="joint_y" type="prismatic">
+      <parent link="link_x"/>
+      <child link="link_y"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="100" lower="-20" upper="20" velocity="0.50"/>
+      <dynamics damping="10.0" friction="10"/>
+   </joint>
+   <joint name="joint_theta" type="continuous">
+      <parent link="link_y"/>
+      <child link="base"/>
+      <axis xyz="0 0 1"/>
+      <dynamics damping="10.0" friction="1"/>
+   </joint>
+
+   <link name="base">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="60"/>
+         <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="base">
+         <origin xyz="0.0144092103791508 7.158644489142947e-10 0.26972568940640185" rpy="0.0 -1.4011268661364618 3.141592653589793"/>
+         <geometry>
+            <mesh filename="internavi/assets/assets/base/base.stl"/>
+         </geometry>
+      </visual>
+      <collision>
+         <origin xyz="0.0144092103791508 7.158644489142947e-10 0.26972568940640185" rpy="0.0 -1.4011268661364618 3.141592653589793"/>
+         <geometry>
+            <mesh filename="internavi/assets/assets/base/base.stl"/>
+         </geometry>
+      </collision>
+   </link>
+
+</robot>
