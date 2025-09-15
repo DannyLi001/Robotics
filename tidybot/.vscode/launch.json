@@ -5,24 +5,35 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: arm_controller",
+            "name": "debug arm controller",
             "type": "debugpy",
             "request": "launch",
-            "module": "tidybot.server.arm_server.arm_controller",
+            "module": "tidybot_new.server.arm_server.arm_controller",
+            "justMyCode": true,
             "cwd": "${workspaceFolder}/.."
         },
         {
-            "name": "Python Debugger: Current File",
+            "name": "debug arm server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "module": "tidybot_new.server.arm_server.arm_server",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/.."
         },
         {
-            "name": "Python Debugger: arm_server",
+            "name": "debug server",
             "type": "debugpy",
             "request": "launch",
-            "module": "tidybot.server.arm_server.arm_server",
+            "module": "tidybot_new.server.server",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/.."
+        },
+        {
+            "name": "debug arm_test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tidybot_new.server.arm_server.arm_test",
+            "justMyCode": true,
             "cwd": "${workspaceFolder}/.."
         },
     ]

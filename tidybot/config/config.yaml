@@ -38,8 +38,8 @@ arm:
     main:
         type: franka
         ip: 172.16.0.2
-        urdf_path: ./assets/franka.urdf
-        ee_link_name: panda_hand_tcp
+        urdf_path: ./assets/urdfs/fr3_franka_hand.urdf
+        ee_link_name: fr3_hand_tcp
         
         # Joint configuration
         home_qpos: [0.0, 0.0, 0.0, -1.6, 0.0, 1.6, 0.8]
@@ -52,7 +52,7 @@ arm:
         velocity_factor: 0.05
         acceleration_factor: 0.01
         jerk_factor: 0.1
-        control_mode: 1
+        control_mode: 2
         
         # Joint limits [min, max] for each joint
         joint_limits:

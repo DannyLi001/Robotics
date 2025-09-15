@@ -1,8 +1,15 @@
 import time
 from multiprocessing.managers import BaseManager
-from constants import BASE_RPC_HOST, BASE_RPC_PORT, RPC_AUTHKEY
+from ...config.config import get_rpc_classes
 import numpy as np
-from constants import POLICY_CONTROL_PERIOD
+
+BASE_RPC = get_rpc_classes()['base']
+BASE_RPC_HOST = BASE_RPC.host
+BASE_RPC_PORT = BASE_RPC.port
+authkey_str = BASE_RPC.authkey
+RPC_AUTHKEY = authkey_str.encode() if isinstance(authkey_str, str) else authkey_str
+
+POLICY_CONTROL_PERIOD = 0.1
 
 class WheelManager(BaseManager):
     pass

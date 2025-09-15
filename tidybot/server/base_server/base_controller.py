@@ -1,3 +1,4 @@
+# Tell Phoenix 6 to use hardware instead of simulation
 import os
 os.environ['CTR_TARGET'] = 'Hardware'  # pylint: disable=wrong-import-position
 
@@ -11,12 +12,19 @@ import phoenix6
 from phoenix6 import configs, controls, hardware
 from ruckig import InputParameter, OutputParameter, Result, Ruckig, ControlInterface
 from threadpoolctl import threadpool_limits
-from ..config.config import h_x, h_y, ENCODER_MAGNET_OFFSETS, POLICY_CONTROL_PERIOD
+# from ...config.config import h_x, h_y, ENCODER_MAGNET_OFFSETS
+from ...config.config import get_base_class
+
+POLICY_CONTROL_PERIOD = 0.1
+BASE_CFG = get_base_class()['base']
+h_x = np.array(BASE_CFG.h_x)
+h_y = np.array(BASE_CFG.h_y)
+ENCODER_MAGNET_OFFSETS = np.array(BASE_CFG.encoder_magnet_offsets)
 
 # Vehicle
-CONTROL_FREQ = 250                   # 250 Hz
+CONTROL_FREQ = BASE_CFG.control_freq                     # 250 Hz
 CONTROL_PERIOD = 1.0 / CONTROL_FREQ  # 4 ms
-NUM_CASTERS = 4
+NUM_CASTERS = BASE_CFG.num_casters                       # 4
 
 # Caster
 b_x = -0.014008                  # Caster offset (m)
@@ -394,20 +402,21 @@ class Vehicle:
         print(f'ENCODER_MAGNET_OFFSETS = [{", ".join(offsets)}]')
 
 if __name__ == '__main__':
-    vehicle = Vehicle(max_vel=(0.25, 0.25, 0.79))
-    # vehicle.get_encoder_offsets(); exit()
-    vehicle.start_control()
-    try:
-        for _ in range(50):
-            vehicle.set_target_velocity(np.array([0.0, 0.0, 0.39]))
-            # vehicle.set_target_velocity(np.array([0.25, 0.0, 0.0]))
-            # vehicle.set_target_position(np.array([0.5, 0.0, 0.0]))
-            print(f'Vehicle - x: {vehicle.x} dx: {vehicle.dx}')
-            time.sleep(POLICY_CONTROL_PERIOD)  # Note: Not precise
-    finally:
-        vehicle.stop_control()
-        # import pickle
-        # output_path = 'controller-states.pkl'
-        # with open(output_path, 'wb') as f:
-        #     pickle.dump(vehicle.data, f)
-        # print(f'Data saved to {output_path}')
+    # vehicle = Vehicle(max_vel=(0.25, 0.25, 0.79))
+    # # vehicle.get_encoder_offsets(); exit()
+    # vehicle.start_control()
+    # try:
+    #     for _ in range(50):
+    #         vehicle.set_target_velocity(np.array([0.0, 0.0, 0.39]))
+    #         # vehicle.set_target_velocity(np.array([0.25, 0.0, 0.0]))
+    #         # vehicle.set_target_position(np.array([0.5, 0.0, 0.0]))
+    #         print(f'Vehicle - x: {vehicle.x} dx: {vehicle.dx}')
+    #         time.sleep(POLICY_CONTROL_PERIOD)  # Note: Not precise
+    # finally:
+    #     vehicle.stop_control()
+    #     # import pickle
+    #     # output_path = 'controller-states.pkl'
+    #     # with open(output_path, 'wb') as f:
+    #     #     pickle.dump(vehicle.data, f)
+    #     # print(f'Data saved to {output_path}')
+    pass

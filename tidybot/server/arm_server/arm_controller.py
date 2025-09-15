@@ -60,6 +60,7 @@ class FrankaArm:
         self.acceleration_factor = self.arm_cfg.acceleration_factor
         self.jerk_factor = self.arm_cfg.jerk_factor
         self.control_mode = RobotMode(self.arm_cfg.control_mode)
+        print("Franka arm initialized with control mode:", self.control_mode.name)
 
         # Setup robot
         # print(self.robot.joint_velocity_limit)
@@ -106,7 +107,7 @@ class FrankaArm:
                 self.robot.recover_from_errors()
 
         elif self.control_mode is RobotMode.JOINT_VEL:
-            motion = JointVelocityMotion(target, duration=Duration(1000 * POLICY_CONTROL_PERIOD))
+            motion = JointVelocityMotion(target, duration=Duration())
             try:
                 self.robot.move(motion, asynchronous=True)
                 print(f"Moving with joint velocities: {np.round(target, 3)}")
@@ -270,7 +271,7 @@ class FrankaArm:
 
         # Stop robot motion
         try:
-            self.robot._stop()
+            self._stop()
         except Exception as e:
             print(f'Error stopping robot: {e}')
 
@@ -292,4 +293,3 @@ if __name__ == '__main__':
     #     time.sleep(0.01)
     # pass
     # arm.stop_cyclic()
-

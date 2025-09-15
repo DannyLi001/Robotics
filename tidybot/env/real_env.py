@@ -1,6 +1,4 @@
-# from ..utils.cameras import RealSenseCamera
-# from ..config.config import BASE_RPC_HOST, BASE_RPC_PORT, ARM_RPC_HOST, ARM_RPC_PORT, RPC_AUTHKEY
-from ..config.config import get_rpc_constants
+from ..config.config import get_rpc_classes
 from ..server.arm_server.arm_server import ArmManager
 from ..server.base_server.base_server import BaseManager
 import sys
@@ -11,19 +9,17 @@ import torch
 import pyrealsense2 as rs
 from scipy.spatial.transform import Rotation as R
 
-# sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'point-policy'))
-# from point_policy.point_utils.points_class import PointsClass
-# from point_policy.robot_utils.franka.utils import triangulate_points, pixel2d_to_3d
-from ..config.config import RealEnvConfig
-# from internavi.algorithms.ppo import PPOAgent, PPOConfig
+RPC_CFG = get_rpc_classes()
 
-RPC_CFG = get_rpc_constants()
+BASE_RPC_HOST = RPC_CFG['base'].host
+BASE_RPC_PORT = RPC_CFG['base'].port
+authkey_str = RPC_CFG['base'].authkey
+BASE_RPC_AUTHKEY = authkey_str.encode() if isinstance(authkey_str, str) else authkey_str
 
-BASE_RPC_HOST = RPC_CFG.get("BASE_RPC_HOST", "127.0.0.1")
-BASE_RPC_PORT = RPC_CFG.get("BASE_RPC_PORT", 10000)
-ARM_RPC_HOST = RPC_CFG.get("ARM_RPC_HOST", "127.0.0.1")
-ARM_RPC_PORT = RPC_CFG.get("ARM_RPC_PORT", 10001)
-RPC_AUTHKEY = RPC_CFG.get("RPC_AUTHKEY", "")
+ARM_RPC_HOST = RPC_CFG['arm'].host
+ARM_RPC_PORT = RPC_CFG['arm'].port
+authkey_str = RPC_CFG['arm'].authkey
+ARM_RPC_AUTHKEY = authkey_str.encode() if isinstance(authkey_str, str) else authkey_str
 
 class RealEnv:
     def __init__(

@@ -1,7 +1,13 @@
 import time
 from multiprocessing.managers import BaseManager
 from .base_controller import Vehicle
-from ..config.config import BASE_RPC_HOST, BASE_RPC_PORT, RPC_AUTHKEY
+from ...config.config import get_rpc_classes
+
+BASE_RPC = get_rpc_classes()['base']
+BASE_RPC_HOST = BASE_RPC.host
+BASE_RPC_PORT = BASE_RPC.port
+authkey_str = BASE_RPC.authkey
+RPC_AUTHKEY = authkey_str.encode() if isinstance(authkey_str, str) else authkey_str
 
 class Base:
     def __init__(self, max_vel=(0.5, 0.5, 1.57), max_accel=(0.25, 0.25, 0.79)):
@@ -23,10 +29,15 @@ class Base:
             time.sleep(0.01)
 
     def execute_action(self, action):
-        self.vehicle.set_target_position(action['base_pose'])
+        if 'base_pose' in action:
+            self.vehicle.set_target_position(action['base_pose'])
+        elif 'base_vel' in action:
+            self.vehicle.set_target_velocity(action['base_vel'])
+        else:
+            print('Invalid action')
 
-    def get_state(self):
-        state = {'base_pose': self.vehicle.x}
+    def get_state(self) -> dict:
+        state = {'base_pose': self.vehicle.x, 'base_vel': self.vehicle.dx}
         return state
 
     def close(self):
@@ -37,10 +48,15 @@ class Base:
 class BaseManager(BaseManager):
     pass
 
-BaseManager.register('Base', Base)
 
-if __name__ == '__main__':
+def main():
+    BaseManager.register('Base', Base)
     base_manager = BaseManager(address=(BASE_RPC_HOST, BASE_RPC_PORT), authkey=RPC_AUTHKEY)
     server = base_manager.get_server()
     print(f'Base manager server started at {BASE_RPC_HOST}:{BASE_RPC_PORT}')
     server.serve_forever()
+
+
+if __name__ == '__main__':
+    main()
+    # pass
